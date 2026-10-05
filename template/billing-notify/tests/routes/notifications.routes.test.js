@@ -39,7 +39,7 @@ test('POST /notifications/dispatch rejects a missing API key with 401', async ()
 });
 
 test('POST /notifications/dispatch rejects a channel we do not support', async () => {
-  const res = await dispatch({ channel: 'sms', to: 'asha.k@example.com', ...billReady });
+  const res = await dispatch({ channel: 'fax', to: 'asha.k@example.com', ...billReady });
   assert.equal(res.status, 400);
   assert.equal((await res.json()).error.code, 'UNKNOWN_CHANNEL');
 });
@@ -88,4 +88,49 @@ test('POST /notifications/dispatch returns 429 with Retry-After once the key is 
   } finally {
     limitedServer.close();
   }
+});
+
+const getRecord = id => fetch(`${base}/notifications/${id}`, { headers: { 'x-api-key': 'test-key' } });
+const paymentFailed = { template: 'payment-failed', data: { amount: '₹749', dueDate: '12 Oct' } };
+
+test('POST /notifications/dispatch sends an SMS and records segments', async () => {
+  const res = await dispatch({ channel: 'sms', to: '+919812345678', ...paymentFailed });
+  assert.equal(res.status, 202);
+  const body = await res.json();
+  assert.equal(body.status, 'sent');
+  assert.match(body.providerRef, /^sm_/);
+  assert.equal(body.segments, 1);
+  assert.equal((await (await getRecord(body.id)).json()).segments, 1);
+});
+
+test('POST /notifications/dispatch delivers an SMS that fails twice and then succeeds', async () => {
+  const res = await dispatch({ channel: 'sms', to: '+919800007777', ...paymentFailed });
+  assert.equal(res.status, 202);
+  assert.equal((await res.json()).status, 'sent');
+});
+
+test('POST /notifications/dispatch does not retry a permanent SMS failure', async () => {
+  const res = await dispatch({ channel: 'sms', to: '+919800000000', ...paymentFailed });
+  assert.equal(res.status, 502);
+  assert.equal((await res.json()).error.code, 'PROVIDER_REJECTED');
+});
+
+test('POST /notifications/dispatch rejects an SMS over 480 characters with 400', async () => {
+  const res = await dispatch({
+    channel: 'sms', to: '+919812345678', template: 'payment-failed',
+    data: { amount: '₹'.padEnd(500, '9'), dueDate: '12 Oct' },
+  });
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).error.code, 'VALIDATION_FAILED');
+});
+
+test('POST /notifications/dispatch rejects a malformed SMS number with 400', async () => {
+  const res = await dispatch({ channel: 'sms', to: '9812345678', ...paymentFailed });
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).error.code, 'INVALID_RECIPIENT');
+});
+
+test('POST /notifications/dispatch leaves segments off non-SMS responses', async () => {
+  const res = await dispatch({ channel: 'email', to: 'asha.k@example.com', ...billReady });
+  assert.equal('segments' in (await res.json()), false);
 });

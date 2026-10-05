@@ -25,9 +25,11 @@ export function createDispatchService({ providers, logger, redis, store, sleep }
       logger.info('dispatch accepted', { channel: channelName, template, to: maskRecipient(to) });
       const row = store.insert({ channel: channelName, template, accountId: accountId ?? null, status: 'sending' });
       try {
-        const { providerRef } = await channel.send(message, { providers, logger, sleep });
-        store.update(row.id, { status: 'sent', providerRef });
-        return { id: row.id, status: 'sent', providerRef };
+        const { providerRef, segments } = await channel.send(message, { providers, logger, sleep });
+        // Only SMS reports segments (for cost tracking); other channels leave it out.
+        const extra = segments === undefined ? {} : { segments };
+        store.update(row.id, { status: 'sent', providerRef, ...extra });
+        return { id: row.id, status: 'sent', providerRef, ...extra };
       } catch (err) {
         store.update(row.id, { status: 'failed', errorCode: err.code ?? 'INTERNAL' });
         throw err;
