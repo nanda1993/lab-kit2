@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "ask": [
+      "Bash(npm install:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(./migrations/001_create_notification_log.sql)",
+      "Edit(./migrations/002_add_account_id.sql)",
+      "Edit(./.github/**)",
+      "Bash(git push:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
