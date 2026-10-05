@@ -1,0 +1,12 @@
+{
+  "name": "billing-notify",
+  "version": "1.4.0",
+  "private": true,
+  "type": "module",
+  "description": "Kestrel Mobile billing notifications service: sends bill-ready, payment-due and payment-failed notices over email and in-app.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node scripts/test.js"
+  }
+}
