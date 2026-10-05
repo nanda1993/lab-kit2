@@ -89,3 +89,23 @@ test('POST /notifications/dispatch returns 429 with Retry-After once the key is 
     limitedServer.close();
   }
 });
+
+test('POST /notifications/dispatch sends a push notification and returns 202', async () => {
+  const res = await dispatch({ channel: 'push', to: `kst_${'a1B2'.repeat(8)}`, ...billReady });
+  assert.equal(res.status, 202);
+  const body = await res.json();
+  assert.equal(body.status, 'sent');
+  assert.match(body.providerRef, /^pu_/);
+});
+
+test('POST /notifications/dispatch rejects a malformed push token with 400', async () => {
+  const res = await dispatch({ channel: 'push', to: 'not-a-token', ...billReady });
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).error.code, 'INVALID_RECIPIENT');
+});
+
+test('POST /notifications/dispatch returns 410 when the push token is no longer registered', async () => {
+  const res = await dispatch({ channel: 'push', to: `kst_expired${'a'.repeat(25)}`, ...billReady });
+  assert.equal(res.status, 410);
+  assert.equal((await res.json()).error.code, 'RECIPIENT_GONE');
+});

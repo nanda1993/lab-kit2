@@ -4,6 +4,9 @@ export const channels = Object.freeze({
     from: process.env.EMAIL_FROM ?? 'billing@kestrel.example',
     retry: Object.freeze({ attempts: 3, baseDelayMs: 200 }),
   }),
+  push: Object.freeze({
+    retry: Object.freeze({ attempts: 3, baseDelayMs: 200 }),
+  }),
   inapp: Object.freeze({
     maxInboxSize: 50,
   }),

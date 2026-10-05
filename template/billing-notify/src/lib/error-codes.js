@@ -9,6 +9,7 @@ export const ERROR_CODES = Object.freeze({
   NOT_FOUND:            { status: 404 },
   DUPLICATE_DISPATCH:   { status: 409 },
   RATE_LIMITED:         { status: 429 },
+  RECIPIENT_GONE:       { status: 410 },
   PROVIDER_UNAVAILABLE: { status: 502 },
   PROVIDER_REJECTED:    { status: 502 },
   INTERNAL:             { status: 500 },
